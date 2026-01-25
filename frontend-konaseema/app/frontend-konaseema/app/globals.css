@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: var(--font-inter);
+}
+
+h1, h2, h3 {
+  font-family: var(--font-playfair);
+}
+
+.brand-logo {
+  font-family: var(--font-greatvibes);
+}
+
+.premium-card {
+  background: #fffaf2;
+  border: 1px solid #c9a45c;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
+}
+
+.premium-card:hover {
+  transform: translateY(-6px);
+}
+
+.btn-primary {
+  background: #1f3a2a;
+  color: white;
+  padding: 12px 28px;
+  border-radius: 999px;
+  font-weight: 600;
+}
