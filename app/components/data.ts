@@ -31,7 +31,8 @@ export const PRODUCTS: Product[] = [
   { id: "p5", name: "Nuvvula Laddu", price: 219, weight: "250g", category: "Traditional Sweets", image: IMG_SWEET_2 },
   { id: "p6", name: "Sunnundalu", price: 279, weight: "250g", category: "Traditional Sweets", image: IMG_SWEET_3 },
   { id: "p7", name: "Boondi Laddu", price: 239, weight: "250g", category: "Traditional Sweets", image: IMG_SWEET_2 },
-  { id: "p8", name: "Putharekulu (Dryfruit)", price: 499, weight: "250g", category: "Traditional Sweets", image: IMG_SWEET_1 },
+  { id: "p8", name: "Putharekulu (Dryfruit)", price: 499, weight: "250g", category: "Traditional Sweets", image: "/images/kaja.jpg"
+ },
   { id: "p9", name: "Ariselu", price: 329, weight: "250g", category: "Traditional Sweets", image: IMG_SWEET_3 },
   { id: "p10", name: "Bobbatlu / Puran Poli", price: 349, weight: "4 pcs", category: "Traditional Sweets", image: IMG_SWEET_2 },
   { id: "p11", name: "Mysore Pak", price: 299, weight: "250g", category: "Traditional Sweets", image: IMG_SWEET_1 },
