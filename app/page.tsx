@@ -1,339 +1,73 @@
-// app/checkout/page.tsx
+// app/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
-import { useCart } from "../components/CartContext";
-import { supabase } from "../lib/supabaseClient";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import Link from "next/link";
+import { motion } from "framer-motion";
 
-type Shipping = {
-  fullName: string;
-  email: string;
-  phone: string;
-  country: string;
-  address1: string;
-  address2: string;
-  city: string;
-  state: string;
-  zip: string;
-  deliveryNotes: string;
-};
+const categories = [
+  { name: "Sweets", slug: "sweets" },
+  { name: "Snacks", slug: "snacks" },
+  { name: "Pickles", slug: "pickles" },
+];
 
-const STORAGE_KEY = "konaseema_shipping_v1";
-
-export default function CheckoutPage() {
-  const cart = useCart();
-
-  const [shipping, setShipping] = useState<Shipping>({
-    fullName: "",
-    email: "",
-    phone: "",
-    country: "India",
-    address1: "",
-    address2: "",
-    city: "",
-    state: "",
-    zip: "",
-    deliveryNotes: "",
-  });
-
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setShipping((prev) => ({ ...prev, ...JSON.parse(raw) }));
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(shipping));
-    } catch {}
-  }, [shipping]);
-
-  const errors = useMemo(() => {
-    const e: Record<string, string> = {};
-    const email = shipping.email.trim();
-    const phone = shipping.phone.trim();
-
-    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    const phoneOk = phone.length >= 7;
-
-    if (!shipping.fullName.trim()) e.fullName = "Full name is required";
-    if (!email) e.email = "Email is required";
-    else if (!emailOk) e.email = "Enter a valid email";
-
-    if (!phone) e.phone = "Phone number is required";
-    else if (!phoneOk) e.phone = "Enter a valid phone number";
-
-    if (!shipping.country.trim()) e.country = "Country is required";
-    if (!shipping.address1.trim()) e.address1 = "Address line 1 is required";
-    if (!shipping.city.trim()) e.city = "City is required";
-    if (!shipping.state.trim()) e.state = "State is required";
-    if (!shipping.zip.trim()) e.zip = "ZIP / Postal code is required";
-
-    return e;
-  }, [shipping]);
-
-  const saveOrderToDb = async (): Promise<string> => {
-    const { data: userData, error: userErr } = await supabase.auth.getUser();
-    if (userErr) throw new Error(userErr.message);
-    if (!userData.user) throw new Error("Please login to place the order.");
-    const userId = userData.user.id;
-
-    const subtotal = cart.items.reduce(
-      (s: number, it: any) => s + Number(it.price) * Number(it.qty),
-      0
-    );
-    const shippingFee = 0;
-    const total = subtotal + shippingFee;
-
-    const { data: address, error: addrErr } = await supabase
-      .from("addresses")
-      .insert({
-        user_id: userId,
-        full_name: shipping.fullName.trim(),
-        email: shipping.email.trim(),
-        phone: shipping.phone.trim(),
-        address_line1: shipping.address1.trim(),
-        address_line2: shipping.address2.trim() ? shipping.address2.trim() : null,
-        city: shipping.city.trim(),
-        state: shipping.state.trim(),
-        postal_code: shipping.zip.trim(),
-        country: shipping.country.trim() || "India",
-      })
-      .select("id")
-      .single();
-
-    if (addrErr) throw new Error(addrErr.message);
-
-    const { data: order, error: orderErr } = await supabase
-      .from("orders")
-      .insert({
-        user_id: userId,
-        address_id: address.id,
-        currency: "INR",
-        status: "pending",
-        subtotal,
-        shipping: shippingFee,
-        total,
-        notes: shipping.deliveryNotes.trim() ? shipping.deliveryNotes.trim() : null,
-      })
-      .select("id")
-      .single();
-
-    if (orderErr) throw new Error(orderErr.message);
-
-    const itemsPayload = cart.items.map((i: any) => ({
-      order_id: order.id,
-      product_id: String(i.id),
-      name: i.name,
-      price: Number(i.price),
-      qty: Number(i.qty),
-    }));
-
-    const { error: itemsErr } = await supabase.from("order_items").insert(itemsPayload);
-    if (itemsErr) throw new Error(itemsErr.message);
-
-    return String(order.id);
-  };
-
-  const isValid = useMemo(() => Object.keys(errors).length === 0, [errors]);
-
-  const onPlaceOrder = async () => {
-    // mark required fields as touched to show errors
-    setTouched({
-      fullName: true,
-      email: true,
-      phone: true,
-      country: true,
-      address1: true,
-      city: true,
-      state: true,
-      zip: true,
-    });
-
-    if (!isValid) {
-      setSaveError("Please fill all required fields.");
-      return;
-    }
-    if (cart.items.length === 0) {
-      setSaveError("Your cart is empty.");
-      return;
-    }
-
-    try {
-      setSaveError(null);
-      setSuccessMsg(null);
-      setSaving(true);
-
-      const orderId = await saveOrderToDb();
-      setSuccessMsg(`✅ Order saved. Order ID: ${orderId}`);
-      cart.clear();
-    } catch (e: any) {
-      setSaveError(e?.message || "Failed to save order.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const inputBase =
-    "w-full px-4 py-3 rounded-2xl border border-gold bg-[#fffaf2] focus:outline-none focus:ring-2 focus:ring-gold/40";
-  const inputErr = "border-red-400 focus:ring-red-200";
-
-  const showErr = (k: keyof Shipping) => touched[k] && errors[k];
-
+export default function HomePage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-cream pt-28 pb-16">
-        <div className="max-w-6xl mx-auto px-5">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-brown mb-8">
-            Checkout
-          </h1>
 
-          <div className="grid lg:grid-cols-2 gap-8">
-            <section className="card p-6">
-              <h2 className="text-xl font-bold mb-4">Order Summary</h2>
-              <div className="space-y-3">
-                {cart.items.map((it: any) => (
-                  <div key={it.id} className="flex items-center justify-between">
-                    <div className="font-semibold">
-                      {it.name} <span className="opacity-70">× {it.qty}</span>
-                    </div>
-                    <div className="font-semibold">₹{it.qty * it.price}</div>
-                  </div>
-                ))}
-              </div>
+      <main className="min-h-screen bg-cream pt-28 pb-20">
+        {/* Hero */}
+        <section className="max-w-7xl mx-auto px-6 mb-20">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center"
+          >
+            <h1 className="text-4xl md:text-6xl font-extrabold text-brown mb-4">
+              Konaseema Foods
+            </h1>
+            <p className="text-lg md:text-xl text-brown/80 max-w-2xl mx-auto">
+              Authentic traditional sweets and snacks, crafted with care and heritage.
+            </p>
+          </motion.div>
+        </section>
 
-              <div className="border-t mt-5 pt-4 flex items-center justify-between text-lg font-extrabold">
-                <div>Total</div>
-                <div>₹{cart.total}</div>
-              </div>
-            </section>
+        {/* Categories */}
+        <section className="max-w-7xl mx-auto px-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-brown mb-8">
+            Categories
+          </h2>
 
-            <section className="card p-6">
-              <h2 className="text-xl font-bold mb-4">Shipping Details</h2>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <Field
-                  label="Full Name *"
-                  value={shipping.fullName}
-                  onChange={(v) => setShipping({ ...shipping, fullName: v })}
-                  className={`${inputBase} ${showErr("fullName") ? inputErr : ""}`}
-                />
-                <Field
-                  label="Email *"
-                  value={shipping.email}
-                  onChange={(v) => setShipping({ ...shipping, email: v })}
-                  className={`${inputBase} ${showErr("email") ? inputErr : ""}`}
-                />
-                <Field
-                  label="Phone *"
-                  value={shipping.phone}
-                  onChange={(v) => setShipping({ ...shipping, phone: v })}
-                  className={`${inputBase} ${showErr("phone") ? inputErr : ""}`}
-                />
-                <Field
-                  label="Country *"
-                  value={shipping.country}
-                  onChange={(v) => setShipping({ ...shipping, country: v })}
-                  className={`${inputBase} ${showErr("country") ? inputErr : ""}`}
-                />
-                <Field
-                  label="Address Line 1 *"
-                  value={shipping.address1}
-                  onChange={(v) => setShipping({ ...shipping, address1: v })}
-                  className={`${inputBase} ${showErr("address1") ? inputErr : ""}`}
-                />
-                <Field
-                  label="Address Line 2"
-                  value={shipping.address2}
-                  onChange={(v) => setShipping({ ...shipping, address2: v })}
-                  className={inputBase}
-                />
-                <Field
-                  label="City *"
-                  value={shipping.city}
-                  onChange={(v) => setShipping({ ...shipping, city: v })}
-                  className={`${inputBase} ${showErr("city") ? inputErr : ""}`}
-                />
-                <Field
-                  label="State *"
-                  value={shipping.state}
-                  onChange={(v) => setShipping({ ...shipping, state: v })}
-                  className={`${inputBase} ${showErr("state") ? inputErr : ""}`}
-                />
-                <Field
-                  label="ZIP / Postal *"
-                  value={shipping.zip}
-                  onChange={(v) => setShipping({ ...shipping, zip: v })}
-                  className={`${inputBase} ${showErr("zip") ? inputErr : ""}`}
-                />
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold mb-1">
-                    Delivery Notes
-                  </label>
-                  <textarea
-                    className={`${inputBase} min-h-[110px]`}
-                    value={shipping.deliveryNotes}
-                    onChange={(e) =>
-                      setShipping({ ...shipping, deliveryNotes: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-
-              {saveError && <div className="mt-4 text-sm text-red-600">{saveError}</div>}
-              {successMsg && <div className="mt-4 text-sm text-green-700">{successMsg}</div>}
-
-              <button
-                className="btn-primary mt-6 w-full"
-                onClick={onPlaceOrder}
-                disabled={saving || cart.items.length === 0}
-                type="button"
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {categories.map((cat, i) => (
+              <motion.div
+                key={cat.slug}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
               >
-                {saving ? "Saving..." : `Place Order (₹${cart.total})`}
-              </button>
-
-              {cart.items.length === 0 && (
-                <div className="mt-3 text-sm opacity-70">Your cart is empty.</div>
-              )}
-            </section>
+                <Link
+                  href={`/category/${cat.slug}`}
+                  className="block card p-8 text-center hover:scale-[1.02] transition-transform"
+                >
+                  <div className="text-xl font-bold text-brown mb-2">
+                    {cat.name}
+                  </div>
+                  <div className="text-sm text-brown/70">
+                    Explore {cat.name.toLowerCase()}
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
           </div>
-        </div>
+        </section>
       </main>
+
       <Footer />
     </>
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  className,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  className: string;
-}) {
-  return (
-    <div>
-      <label className="block text-sm font-semibold mb-1">{label}</label>
-      <input
-        className={className}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onBlur={() => {}}
-      />
-    </div>
   );
 }
