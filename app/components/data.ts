@@ -1,12 +1,11 @@
 import type { Product } from "./CartContext";
 
 export const CATEGORIES = [
-  "All Products",
+  "All",
   "Traditional Sweets",
   "Dry Fruit Sweets",
   "Snacks",
   "Pickles",
-  "Podis",
   "Gift Boxes",
 ];
 
@@ -66,17 +65,8 @@ export const PRODUCTS: Product[] = [
   { id: "p46", name: "Lemon Pickle", price: 229, weight: "250g", category: "Pickles", image: "/images/Lemon Pickle.jpg" },
   { id: "p47", name: "Mixed Veg Pickle", price: 249, weight: "250g", category: "Pickles", image: "/images/Mixed Veg Pickle.jpg" },
 
-  // ---- Podis (48-54)
-  { id: "p48", name: "Kandi Podi", price: 199, weight: "200g", category: "Podis", image: "/images/Kandi Podi.jpg" },
-  { id: "p49", name: "Mulaga Podi", price: 189, weight: "200g", category: "Podis", image: "/images/Mulaga Podi.jpg" },
-  { id: "p50", name: "Karivepaku Podi", price: 199, weight: "200g", category: "Podis", image: "/images/Karivepaku Podi.jpg" },
-  { id: "p51", name: "Nuvvula Podi", price: 189, weight: "200g", category: "Podis", image: "/images/Nuvvula Podi.jpg" },
-  { id: "p52", name: "Moringa Leaf Podi", price: 219, weight: "200g", category: "Podis", image: "/images/Moringa Podi.jpg" },
-  { id: "p53", name: "Flaxseed Podi", price: 209, weight: "200g", category: "Podis", image: "/images/Flaxseed Podi.jpg" },
-  { id: "p54", name: "Curry Leaves Garlic Podi", price: 219, weight: "200g", category: "Podis", image: "/images/Garlic Podi.jpg" },
-
-  // ---- Gift Boxes (55-57)
-  { id: "p55", name: "Sweet Combo Box (Small)", price: 899, weight: "Assorted", category: "Gift Boxes", image: "/images/Sweet Combo Box (Small).jpg" },
-  { id: "p56", name: "Sweet Combo Box (Medium)", price: 1299, weight: "Assorted", category: "Gift Boxes", image: "/images/Sweet Combo Box (Medium).jpg" },
-  { id: "p57", name: "Festive Gift Hamper", price: 1799, weight: "Assorted", category: "Gift Boxes", image: "/images/Festive Gift Hamper.jpg" },
+  // ---- Gift Boxes (48-50)
+  { id: "p48", name: "Sweet Combo Box (Small)", price: 899, weight: "Assorted", category: "Gift Boxes", image: "/images/Sweet Combo Box (Small).jpg" },
+  { id: "p49", name: "Sweet Combo Box (Medium)", price: 1299, weight: "Assorted", category: "Gift Boxes", image: "/images/Sweet Combo Box (Medium).jpg" },
+  { id: "p50", name: "Festive Gift Hamper", price: 1799, weight: "Assorted", category: "Gift Boxes", image: "/images/Festive Gift Hamper.jpg" },
 ];
